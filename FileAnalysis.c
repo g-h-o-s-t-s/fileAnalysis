@@ -1,42 +1,35 @@
-#include <stdio.h>
+
+#include <unistd.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 
-void listFiles(char *path);
-
-int main()
+void listDir( char *name)
 {
-    listFiles(".");
-    return 0;
-}
+    DIR *dir;
+    struct dirent *entry;
 
+    if (!(dir = opendir(name)))
+        return;
 
-/**
- * Lists all files and sub-directories at given path.
- */
-void listFiles(char *path)
-{
-    struct dirent *dp;
-    DIR *dir = opendir(path);
-    struct stat myfile;
-    // Unable to open directory stream
-    while ((dp = readdir(dir)) != NULL)
-    {
-         lstat(dp->d_name,&myfile);
-         if (!dir)
-                  return;
-         else if (myfile.st_mode & 16384)  {
-                  listFiles(dp->d_name);
-         }
-
-        else {
-                  printf("%s\n", dp->d_name);
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_DIR) {
+            char path[1000];
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                continue;
+            snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
+            printf("[%s]\n", entry->d_name);
+            listDir(path);
+        } else {
+            printf("%s\n", entry->d_name);
         }
     }
-   // Close directory stream
     closedir(dir);
 }
 
+int main(void) {
+    listDir(".");
+    return 0;
+}
 

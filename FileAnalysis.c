@@ -4,32 +4,54 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 
-void listDir( char *name)
+int id[1000];
+
+int main()
 {
     DIR *dir;
     struct dirent *entry;
-
-    if (!(dir = opendir(name)))
-        return;
+    if (!(dir = opendir(".")))
+        return NULL;
 
     while ((entry = readdir(dir)) != NULL) {
+
         if (entry->d_type == DT_DIR) {
-            char path[1000];
-            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-                continue;
-            snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
-            printf("[%s]\n", entry->d_name);
-            listDir(path);
-        } else {
-            printf("%s\n", entry->d_name);
-        }
+              dir_handling_func(entry->d_name);   }
+        else if (entry->d_type == DT_REG) {
+              file_handling_func(entry->d_name);  }
+        else  {
+              printf("Invalid file type\n");           }
+return NULL;
+} }
+
+
+void *file_handling_func(void* path_to_file) {
+    FILE  *file = fopen(path_to_file,"r");
+
+    if(file != NULL) {
+       mutex_lock();
+       printf("%s",path_to_file);
+       mutex_unlock();
     }
-    closedir(dir);
+fclose(file);
 }
 
-int main(void) {
-    listDir(".");
-    return 0;
+void *dir_handling_func(void* target_path) {
+    DIR *dir;
+    struct dirent *entry;
+    void *result;
+    long  i = 0;
+    opendir(target_path);
+    while(readdir(target_path) != NULL) {
+       if(target_path->d_type == DT_DIR) {
+          pthread_create(&id[i], NULL, &dir_handling_func,NULL);
+            i++;  }
+       else {
+          pthread_create(&id[i], NULL, &file_handling_func, NULL);
+            i++;  }
+     }
+closedir(target_path);
 }
 

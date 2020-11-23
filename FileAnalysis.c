@@ -1,4 +1,3 @@
-
 #include <unistd.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -7,6 +6,36 @@
 #include <pthread.h>
 
 int id[1000];
+
+void *file_handling_func(char* path_to_file) {
+    FILE  *file = fopen(path_to_file,"r");
+
+    if(file != NULL) {
+       static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+       pthread_mutex_lock(&mut);
+       printf("%s",path_to_file);
+       pthread_mutex_unlock(&mut);
+    }
+fclose(file);
+}
+
+
+void *dir_handling_func(char* target_path) {
+    DIR *dir;
+    struct dirent *entry;
+    void *result;
+    long unsigned  i = 0;
+    opendir(target_path);
+    while(entry = readdir(target_path) != NULL) {
+       if(entry->d_type == DT_DIR) {
+          pthread_create(&id[i], NULL, &dir_handling_func,NULL);
+            i++;  }
+       else {
+          pthread_create(&id[i], NULL, &file_handling_func, NULL);
+            i++;  }
+     }
+closedir(target_path);
+}
 
 int main()
 {
@@ -23,35 +52,6 @@ int main()
               file_handling_func(entry->d_name);  }
         else  {
               printf("Invalid file type\n");           }
-return NULL;
-} }
-
-
-void *file_handling_func(void* path_to_file) {
-    FILE  *file = fopen(path_to_file,"r");
-
-    if(file != NULL) {
-       mutex_lock();
-       printf("%s",path_to_file);
-       mutex_unlock();
-    }
-fclose(file);
+    } 
+    return NULL;
 }
-
-void *dir_handling_func(void* target_path) {
-    DIR *dir;
-    struct dirent *entry;
-    void *result;
-    long  i = 0;
-    opendir(target_path);
-    while(readdir(target_path) != NULL) {
-       if(target_path->d_type == DT_DIR) {
-          pthread_create(&id[i], NULL, &dir_handling_func,NULL);
-            i++;  }
-       else {
-          pthread_create(&id[i], NULL, &file_handling_func, NULL);
-            i++;  }
-     }
-closedir(target_path);
-}
-

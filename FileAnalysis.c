@@ -37,7 +37,7 @@ void *dir_handling_func(void *target_path) {
           strcat(dir_name, "/");
           strcat(dir_name, entry->d_name);
           // create pthread for the sub-directory
-  pthread_create(&id[i], NULL, &dir_handling_func,(void*)dir_name);
+          pthread_create(&id[i], NULL, &dir_handling_func,(void*)dir_name);
             i++;  }
        // if the directory has files
        else {
@@ -57,7 +57,7 @@ void *dir_handling_func(void *target_path) {
          pthread_join(id[j],&result);
          j++;   }
          closedir(dir);
-  free(result);
+         free(result);
          pthread_exit(NULL);
      }
     else{
@@ -77,7 +77,7 @@ int main()
               dir_handling_func((void*)entry->d_name);   }
         // checks if entry is a regular file
         else if (entry->d_type == DT_REG) {
-  file_handling_func((void*)entry->d_name);  }
+              file_handling_func((void*)entry->d_name);  }
         // returns an error for other files
         else  {
               printf("ERROR: Invalid file type\n");      }

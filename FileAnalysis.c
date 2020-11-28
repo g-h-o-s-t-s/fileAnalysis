@@ -16,7 +16,7 @@ void* readFile(void* filePath)
 {
 	FILE* file = fopen((char*) filePath, "r");  // opens the file
 	
-	int i, index = 0, isUnique, w;
+	int i, len, index = 0, isUnique, w;
 
 	// List of distinct words
 	char words[MAX_WORDS][100];
@@ -33,20 +33,26 @@ void* readFile(void* filePath)
 	{
 		while (fscanf(file, "%s", word) != EOF)
 		{
+			len = strlen(word);
 			// Convert word to lowercase
 			w = 0;
 			while (word[w])
 			{
 				//start with letter
-				if (isalpha(word[w]) || (word[w] == '-'))
+				if (word[w] == '-' && (0 < w && w < len))
+				{
+					w++;
+				}
+				else if (isalpha(word[w]))
 				{
 					word[w] = tolower(word[w]);
+					w++;
 				}
 				else
 				{
 					memmove(&word[w], &word[w + 1], strlen(word) - w);
+					len = strlen(word);
 				}
-				w++;
 			}
 
 			// Check if word exits in list of all distinct words
@@ -109,9 +115,11 @@ void* readDirectory(void* target_path)
 		// for readdir() 
 		while ((entry = readdir(dir)) != NULL)
 		{
-			if (entry->d_type == DT_DIR 
-				&& strcmp(entry->d_name, ".") != 0 
-				&& strcmp(entry->d_name, "..") != 0)
+			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+			{
+				continue;
+			}
+			else if (entry->d_type == DT_DIR)
 			{
 				pthread_mutex_lock(&mut);
 				

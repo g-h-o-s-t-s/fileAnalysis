@@ -1,15 +1,16 @@
 CC = gcc
-CFLAGS = -g -Wall
+PREFLAGS = -Wall -o
+POSTFLAGS = -pthread -lm
 
-all: greet generate
+all: greet run
 
 greet:
-	@echo "Now running MAKEFILE.."
+	@echo "Now running MAKEFILE..."
 
-generate: Asst2.c
-	@echo "Generating exe for Asst2.c..."
-	$(CC) $(CFLAGS) Asst2.c -o detector
-  
+run: Asst2.c
+	@echo "Generating detector.exe from FileAnalysis.c..."
+	$(CC) $(PREFLAGS) detector FileAnalysis.c $(POSTFLAGS)
+
 clean:
 	@echo "Cleaning up..."
 	rm -f detector

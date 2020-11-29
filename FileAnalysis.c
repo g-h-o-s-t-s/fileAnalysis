@@ -124,7 +124,7 @@ fileNode* createFile(char* fileName)
 /*----------------------------------------------*/
 void addToken(fileNode* fileHandle, char* token)
 {
-	if (*token == 0 || isspace(*token))
+	if (!*token || isspace(*token))
 		return;
 
 	fileHandle->totalWords += 1;
@@ -368,36 +368,39 @@ void colorize(float jsDist)
 	if (jsDist >= 0 && jsDist <= 0.10)
 	{
 		RED;
-		printf("%f ", jsDist);
+		printf("%0.4f ", jsDist);
 		DEFAULT;
 	}
 	else if (jsDist > 0.1 && jsDist <= 0.15)
 	{
 		YELLOW;
-		printf("%f ", jsDist);
+		printf("%0.4f ", jsDist);
 		DEFAULT;
 	}
 	else if (jsDist > 0.15 && jsDist <= 0.20)
 	{
 		GREEN;
-		printf("%f ", jsDist);
+		printf("%0.4f ", jsDist);
 		DEFAULT;
 	}
 	else if (jsDist > 0.2 && jsDist <= 0.25)
 	{
 		CYAN;
-		printf("%f ", jsDist);
+		printf("%0.4f ", jsDist);
 		DEFAULT;
 	}
 	else if (jsDist > 0.25 && jsDist <= 0.3)
 	{
 		BLUE;
-		printf("%f ", jsDist);
+		printf("%0.4f ", jsDist);
 		DEFAULT;
 	}
 	else if (jsDist > 0.30)
 	{
-		printf("%f ", jsDist);
+		if (jsDist > 0.30103)
+			printf("%0.4f ", 0.30103);
+		else
+			printf("%0.4f ", jsDist);
 	}
 }
 
@@ -570,12 +573,37 @@ void calcJSDist(fileNode* one, fileNode* two)
 
 		colorize(jsDist);
 		printf(" \"%s\" and \"%s\"\n", one->fileName, two->fileName);
-		printf("---------------------\n");
-		printMeans(meanList);
 		freeMeans(meanList);
 		return;
 	}
 
+	// BASECASE 3:
+	// Files have duplicate tokenLists. 
+	// JS-distance would then be 0.0.
+	if (strcmp(tokens1->tokenVal, tokens2->tokenVal) != 0)
+	{
+		tokenNode* temp1 = tokens1;
+		tokenNode* temp2 = tokens2;
+		int isEqual = 1;
+		while (temp1 && temp2)
+		{
+			if (strcmp(temp1->tokenVal, temp2->tokenVal) != 0)
+			{
+				isEqual = 0;
+				break;
+			}
+			temp1 = temp1->next; temp2 = temp2->next;
+		}
+
+		if (isEqual)
+		{
+			colorize(0.0);
+			printf(" \"%s\" and \"%s\"\n", one->fileName, two->fileName);
+			return;
+		}
+	}
+
+	// DEFAULTCASE
 	// Generate first meanNode, populate meanList.
 	meanNode* meanList = createMean(tokens1->tokenVal, 
 							(tokens1->likelihood));
@@ -594,16 +622,12 @@ void calcJSDist(fileNode* one, fileNode* two)
 	
 	// Reset mean pointer to head of list.
 	currMean = meanList;
-	printf("\n\nmeanList value after currMean reset\n");
-	printMeans(currMean);
-	printf("\n\n");
 	
-	// Update means respective to tokens2.
+	// Adding the values from tokenlist2.
 	while (currMean->next)
 	{
 		if (!strcmp(tokens2->tokenVal, currMean->name))
 		{
-			printf("(%s) chance: %f  ", tokens2->tokenVal, tokens2->likelihood);
 			currMean->mean += tokens2->likelihood;
 			break;
 		}
@@ -614,9 +638,6 @@ void calcJSDist(fileNode* one, fileNode* two)
 		currMean->next = createMean(tokens2->tokenVal, 
 							tokens2->likelihood);
 
-	printf("\n\nmeanList value after currMean update\n");
-	printMeans(currMean);
-	printf("\n\n");
 	// Move to next node in tokens2, determine if
 	// currT is present in meanList.
 	tokens2 = tokens2->next;
@@ -635,7 +656,7 @@ void calcJSDist(fileNode* one, fileNode* two)
 		}
 		
 		// Check the last node in the list.
-		if (currMean->next)
+		if (!currMean->next)
 		{
 			if (!strcmp(currT, currMean->name))
 			{
@@ -658,8 +679,6 @@ void calcJSDist(fileNode* one, fileNode* two)
 
 	colorize(jsDist);
 	printf(" \"%s\" and \"%s\"\n", one->fileName, two->fileName);
-	printf("---------------------\n");
-	printMeans(meanList);
 	freeMeans(meanList);
 }
 
@@ -731,8 +750,6 @@ int main(int argc, char* argv[])
 
 	// Report file similarity findings.
 	fileComparator(fileList);
-	printf("---------------------\n");
-	printFiles(fileList);
 
 	// Free memory resources.
 	freeFiles(fileList);

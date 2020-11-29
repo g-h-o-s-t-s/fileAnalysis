@@ -603,6 +603,7 @@ void calcJSDist(fileNode* one, fileNode* two)
 	{
 		if (!strcmp(tokens2->tokenVal, currMean->name))
 		{
+			printf("(%s) chance: %f  ", tokens2->tokenVal, tokens2->likelihood);
 			currMean->mean += tokens2->likelihood;
 			break;
 		}

@@ -81,6 +81,7 @@ void printFiles(fileNode* head);
 void printMeans(meanNode* head);
 
 float calcKLDiv(fileNode* file, meanNode* mean);
+void halveMeans(meanNode* head);
 void calcJSDist(fileNode* one, fileNode* two);
 void fileComparator(fileNode* head);
 /*------------------------------------------*/
@@ -396,10 +397,7 @@ void colorize(float jsDist)
 	}
 	else if (jsDist > 0.30)
 	{
-		if (jsDist > 0.30103)
-			printf("0.30103");
-		else
-			printf("%f ", jsDist);
+		printf("%f ", jsDist);
 	}
 }
 
@@ -461,13 +459,13 @@ void printFiles(fileNode* head)
 
 	while (temp)
 	{
-		printf("(%s) Unique Tokens: %d\n", 
+		printf("(%s) Total Tokens: %d\n", 
 				temp->fileName, temp->totalWords);
 		// Traversing the list of tokens.
 		tokenNode* curr = temp->tokenList;
 		while (curr)
 		{
-			printf("(%s) Frequency:%d     Percentage:%f\n",
+			printf("(%s)        Frequency: %d        Percentage: %f\n",
 				curr->tokenVal, curr->count, curr->likelihood);
 			curr = curr->next;
 		}
@@ -481,7 +479,7 @@ void printMeans(meanNode* head)
 	meanNode* temp = head;
 		while (temp)
 		{
-			printf("(%s)  Mean:%f.\n", temp->name, temp->mean);
+			printf("(%s)  Mean: %f\n", temp->name, temp->mean);
 			temp = temp->next;   
 		}
 }
@@ -515,6 +513,17 @@ float calcKLDiv(fileNode* file, meanNode* mean)
 	return klDiv;
 }
 
+// Cut values of meanList in half.
+void halveMeans(meanNode* head)
+{
+	meanNode* temp = head;
+	while (temp)
+	{
+		temp->mean = (temp->mean) / 2.0;
+		temp = temp->next;   
+	}
+}
+
 // Determine Jensen-Shannon Distance between two files.
 // Final console output generated here.
 void calcJSDist(fileNode* one, fileNode* two)
@@ -539,7 +548,7 @@ void calcJSDist(fileNode* one, fileNode* two)
 	if (!tokens1 && tokens2)
 	{
 		meanNode* meanList = createMean(tokens2->tokenVal, 
-								(tokens2->likelihood) / 2.0);
+								(tokens2->likelihood));
 		meanNode* currMean = meanList;
 
 		if (tokens2->next)
@@ -548,11 +557,13 @@ void calcJSDist(fileNode* one, fileNode* two)
 		while (tokens2)
 		{
 			currMean->next = createMean(tokens2->tokenVal, 
-								(tokens2->likelihood) / 2.0);
+								(tokens2->likelihood));
+
 			tokens2 = tokens2->next;
 			currMean = currMean->next;
 		}
 
+		halveMeans(meanList);
 		float a = calcKLDiv(one, meanList);
 		float b = calcKLDiv(two, meanList);
 		float jsDist = (a + b) / 2.0;
@@ -567,7 +578,7 @@ void calcJSDist(fileNode* one, fileNode* two)
 
 	// Generate first meanNode, populate meanList.
 	meanNode* meanList = createMean(tokens1->tokenVal, 
-							(tokens1->likelihood) / 2.0);
+							(tokens1->likelihood));
 	meanNode* currMean = meanList;
 
 	if (tokens1->next)
@@ -576,20 +587,23 @@ void calcJSDist(fileNode* one, fileNode* two)
 	while (tokens1)
 	{
 		currMean->next = createMean(tokens1->tokenVal,
-							(tokens1->likelihood) / 2.0);
+							(tokens1->likelihood));
 		tokens1 = tokens1->next;
 		currMean = currMean->next;
 	}
 	
 	// Reset mean pointer to head of list.
 	currMean = meanList;
+	printf("\n\nmeanList value after currMean reset\n");
+	printMeans(currMean);
+	printf("\n\n");
 	
 	// Update means respective to tokens2.
 	while (currMean->next)
 	{
 		if (!strcmp(tokens2->tokenVal, currMean->name))
 		{
-			currMean->mean += (tokens2->likelihood / 2.0);
+			currMean->mean += tokens2->likelihood;
 			break;
 		}
 		currMean = currMean->next;
@@ -597,8 +611,11 @@ void calcJSDist(fileNode* one, fileNode* two)
 
 	if (!currMean->next)
 		currMean->next = createMean(tokens2->tokenVal, 
-							(tokens2->likelihood) / 2.0);
+							tokens2->likelihood);
 
+	printf("\n\nmeanList value after currMean update\n");
+	printMeans(currMean);
+	printf("\n\n");
 	// Move to next node in tokens2, determine if
 	// currT is present in meanList.
 	tokens2 = tokens2->next;
@@ -610,7 +627,7 @@ void calcJSDist(fileNode* one, fileNode* two)
 			if (!strcmp(currT, currMean->name))
 			{
 				// Token matched.
-				currMean->mean += (tokens2->likelihood / 2.0);
+				currMean->mean += (tokens2->likelihood);
 				break;
 			}
 			currMean = currMean->next;
@@ -622,17 +639,18 @@ void calcJSDist(fileNode* one, fileNode* two)
 			if (!strcmp(currT, currMean->name))
 			{
 				// Token matched.
-				currMean->mean += (tokens2->likelihood / 2.0);
+				currMean->mean += (tokens2->likelihood);
 				break;
 			}
 			// List ended, generate new meanNode.
 			else 
 				currMean->next = createMean(currT, 
-									(tokens2->likelihood) / 2.0);
+									(tokens2->likelihood));
 		}
 		tokens2 = tokens2->next;
 	}
 
+	halveMeans(meanList);
 	float a = calcKLDiv(one, meanList);
 	float b = calcKLDiv(two, meanList);
 	float jsDist = (a + b) / 2.0;
